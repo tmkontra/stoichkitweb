@@ -1,0 +1,18 @@
+[package]
+name = "stoichkitweb"
+version = "0.1.0"
+authors = ["tmck"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "stoichkitweb"
+path = "src/main.rs"
+
+
+[dependencies]
+warp = "0.2"
+stoichkit = "0.1.0"
+tokio = { version = "0.2.21", features = ["macros"] }
+serde = { version = "1.0", features = ["derive"] }
+env_logger = "0.7.1"

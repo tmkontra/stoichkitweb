@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="author" content="">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Load React. -->
+    <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+
+
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+<h1>StoichKit Web</h1>
+<div id="reaction-form">
+
+</div>
+
+<script src="js/script.js"></script>
+<script>
+    'use strict';
+
+    const e = React.createElement;
+
+    class ReactionForm extends React.Component {
+        newReagent = () => {
+            return {
+                formula: "",
+                mass: null,
+                coeff: 1,
+            }
+        };
+
+        constructor(props) {
+            super(props);
+            this.state = {
+                reagents: [this.newReagent()],
+                product: this.newReagent(),
+                yield: null,
+            };
+        }
+
+        rglist = () => {
+            var inputs = this.state.reagents.map((rg, i) => {
+                const updateFormula = (event) => {
+                  var reagents = [...this.state.reagents];
+                  reagents[i].formula = event.target.value;
+                  this.setState({
+                      ...this.state,
+                      reagents: reagents
+                  })
+                };
+                const updateMass = (event) => {
+                    var reagents = [...this.state.reagents];
+                    reagents[i].mass = Number(event.target.value);
+                    this.setState({
+                        ...this.state,
+                        reagents: reagents
+                    })
+                };
+                const updateCoeff = (event) => {
+                    var reagents = [...this.state.reagents];
+                    reagents[i].coeff = Number(event.target.value);
+                    this.setState({
+                        ...this.state,
+                        reagents: reagents
+                    })
+                };
+                return e(
+                    "div",
+                    {className: "form-group"},
+                    e("label", {}, `Reagent ${i+1} formula`),
+                    e("input", {type: "text", value: this.state.reagents[i].formula, onChange: updateFormula}),
+                    e("input", {type: "number", value: this.state.reagents[i].mass, onChange: updateMass}),
+                    e("input", {type: "number", value: this.state.reagents[i].coeff, onChange: updateCoeff})
+                )
+            });
+            return e(
+                "div",
+                {},
+                ...inputs
+            )
+        };
+
+        p = () => {
+            const updateFormula = (event) => {
+                var product = this.state.product;
+                this.setState({
+                    ...this.state,
+                    product: {
+                        ...product,
+                        formula: event.target.value
+                    }
+                })
+            };
+            const updateMass = (event) => {
+                var product = this.state.product;
+                this.setState({
+                    ...this.state,
+                    product: {
+                        ...product,
+                        mass: Number(event.target.value)
+                    }
+                })
+            };
+            const updateCoeff = (event) => {
+                var product = this.state.product;
+                this.setState({
+                    ...this.state,
+                    product: {
+                        ...product,
+                        coeff: Number(event.target.value)
+                    }
+                })
+            };
+            return e(
+                "div",
+                {className: "form-group"},
+                e("label", {}, "Product"),
+                e("input", {type: "text", value: this.state.product.formula, onChange: updateFormula}),
+                e("input", {type: "number", value: this.state.product.mass, onChange: updateMass}),
+                e("input", {type: "number", value: this.state.product.coeff, onChange: updateCoeff})
+            )
+        };
+
+        addReagent = () => {
+            this.setState({
+                reagents: [
+                    ...this.state.reagents,
+                    this.newReagent()
+                ]
+            })
+        };
+
+        onSubmit = () => {
+            const URL = "http://localhost:3030/yield";
+            alert(`${JSON.stringify(this.state)}`);
+            fetch(
+                URL,
+                {
+                    mode: 'cors',
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'localhost'
+                    },
+                    body: JSON.stringify(this.state)
+                }
+            )
+                .then(res => res.text())
+                .then(
+                    (result) => {
+                        this.setState({
+                            yield: result
+                        });
+                    },
+                )
+        };
+
+        render() {
+            let yieldDisplay;
+            if (this.state.yield) {
+                yieldDisplay = [e("h4", {}, `Yield: ${this.state.yield}`)];
+            } else {
+                yieldDisplay = []
+            }
+
+            return e(
+                'div',
+                {},
+                this.rglist(),
+                e("button", {onClick: this.addReagent}, "Add a Reagent"),
+                this.p(),
+                e("button", {className: "submit", onClick: this.onSubmit}, "Submit"),
+                ...yieldDisplay
+            );
+        }
+    }
+
+    const domContainer = document.querySelector('#reaction-form');
+    ReactDOM.render(e(ReactionForm), domContainer);
+</script>
+</body>
+
+
+</html>
