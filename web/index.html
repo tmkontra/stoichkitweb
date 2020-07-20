@@ -13,15 +13,20 @@
     <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 
     <link href="css/style.css" rel="stylesheet">
 </head>
 
 <body>
-
-<h1>StoichKit Web</h1>
-<div id="reaction-form">
-
+<div class="container">
+    <h1>StoichKit Web</h1>
+    <div class="container d-flex">
+        <div id="reaction-form"></div>
+    </div>
 </div>
 
 <script src="js/script.js"></script>
@@ -48,10 +53,12 @@
             };
         }
 
+        inputClass = "form-control";
+
         rglist = () => {
             var inputs = this.state.reagents.map((rg, i) => {
                 const updateFormula = (event) => {
-                  var reagents = [...this.state.reagents];
+                  let reagents = [...this.state.reagents];
                   reagents[i].formula = event.target.value;
                   this.setState({
                       ...this.state,
@@ -59,7 +66,7 @@
                   })
                 };
                 const updateMass = (event) => {
-                    var reagents = [...this.state.reagents];
+                    let reagents = [...this.state.reagents];
                     reagents[i].mass = Number(event.target.value);
                     this.setState({
                         ...this.state,
@@ -67,21 +74,30 @@
                     })
                 };
                 const updateCoeff = (event) => {
-                    var reagents = [...this.state.reagents];
+                    let reagents = [...this.state.reagents];
                     reagents[i].coeff = Number(event.target.value);
                     this.setState({
                         ...this.state,
                         reagents: reagents
                     })
                 };
-                return e(
-                    "div",
-                    {className: "form-group"},
-                    e("label", {}, `Reagent ${i+1} formula`),
-                    e("input", {type: "text", value: this.state.reagents[i].formula, onChange: updateFormula}),
-                    e("input", {type: "number", value: this.state.reagents[i].mass, onChange: updateMass}),
-                    e("input", {type: "number", value: this.state.reagents[i].coeff, onChange: updateCoeff})
-                )
+                return [
+                    e("h4", {}, `Reagent ${i+1}`),
+                    e("div", {className: "d-flex flex-row justify-content-between"},
+                        e("div", {className: "form-group p-2"},
+                            e("label", {}, `Formula`),
+                            e("input", {type: "text", className: this.inputClass, value: this.state.reagents[i].formula, onChange: updateFormula}),
+                        ),
+                        e("div", {className: "form-group p-2"},
+                            e("label", {}, `Amount (g)`),
+                            e("input", {type: "number", className: this.inputClass, value: this.state.reagents[i].mass, onChange: updateMass}),
+                        ),
+                        e("div", {className: "form-group p-2"},
+                            e("label", {}, `Stoich. Coefficient`),
+                            e("input", {type: "number", className: this.inputClass, value: this.state.reagents[i].coeff, onChange: updateCoeff})
+                        )
+                    )
+                ]
             });
             return e(
                 "div",
@@ -123,15 +139,27 @@
             };
             return e(
                 "div",
-                {className: "form-group"},
-                e("label", {}, "Product"),
-                e("input", {type: "text", value: this.state.product.formula, onChange: updateFormula}),
-                e("input", {type: "number", value: this.state.product.mass, onChange: updateMass}),
-                e("input", {type: "number", value: this.state.product.coeff, onChange: updateCoeff})
+                {className: "mb-4"},
+                e("h4", {}, "Product"),
+                e("div", {className: "d-flex flex-row justify-content-between"},
+                    e("div", {className: "form-group p-2"},
+                        e("label", {}, `Formula`),
+                        e("input", {type: "text", className: this.inputClass, value: this.state.product.formula, onChange: updateFormula}),
+                    ),
+                    e("div", {className: "form-group p-2"},
+                        e("label", {}, `Amount (g)`),
+                        e("input", {type: "number", className: this.inputClass, value: this.state.product.mass, onChange: updateMass}),
+                    ),
+                    e("div", {className: "form-group p-2"},
+                        e("label", {}, `Stoich. Coefficient`),
+                        e("input", {type: "number", className: this.inputClass, value: this.state.product.coeff, onChange: updateCoeff})
+                    )
+                )
             )
         };
 
-        addReagent = () => {
+        addReagent = (ev) => {
+            ev.preventDefault();
             this.setState({
                 reagents: [
                     ...this.state.reagents,
@@ -140,7 +168,8 @@
             })
         };
 
-        onSubmit = () => {
+        onSubmit = (ev) => {
+            ev.preventDefault();
             const URL = "http://localhost:3030/yield";
             alert(`${JSON.stringify(this.state)}`);
             fetch(
@@ -168,19 +197,25 @@
         render() {
             let yieldDisplay;
             if (this.state.yield) {
-                yieldDisplay = [e("h4", {}, `Yield: ${this.state.yield}`)];
+                yieldDisplay = [e("h4", {className: "mt-4"}, e("p", {}, "Yield:"), e("p", {}, `${this.state.yield}`))];
             } else {
                 yieldDisplay = []
             }
 
             return e(
-                'div',
+                'form',
                 {},
-                this.rglist(),
-                e("button", {onClick: this.addReagent}, "Add a Reagent"),
-                this.p(),
-                e("button", {className: "submit", onClick: this.onSubmit}, "Submit"),
-                ...yieldDisplay
+                e("div", {className: ""},
+                    e("div", {},
+                        this.rglist(),
+                        e("button", {className: "btn btn-secondary mb-4", onClick: this.addReagent}, "Add a Reagent")
+                    ),
+                    e("div", {},
+                        this.p(),
+                        e("button", {className: "btn btn-primary submit", onClick: this.onSubmit}, "Submit"),
+                        ...yieldDisplay
+                    )
+                )
             );
         }
     }

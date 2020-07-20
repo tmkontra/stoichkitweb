@@ -51,11 +51,15 @@ async fn main() {
         })
         .with(cors);
 
-    let serve_static = warp::path::end().and(warp::fs::file("./web/index.html"));
+    let serve_static = warp::fs::dir("./web");
+
+    let serve_index =
+        warp::path::end().and(warp::fs::file("./web/index.html"));
 
     let log = warp::log("stoichkitweb");
 
-    warp::serve(pctyield.or(serve_static).with(log))
+    warp::serve(pctyield.or(serve_index).or(serve_static)
+        .with(log))
         .run(([0, 0, 0, 0], 3030))
         .await;
 }
