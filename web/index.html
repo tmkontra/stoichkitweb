@@ -22,10 +22,31 @@
 </head>
 
 <body>
-<div class="container">
-    <h1>StoichKit Web</h1>
-    <div class="container d-flex">
-        <div id="reaction-form"></div>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light static-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">StoichKit Web</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Percent Yield
+                        <span class="sr-only">(current)</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/about">About</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container col-md-8">
+    <h3>Percent Yield Calculator</h3>
+    <div id="reaction-form-container">
+
     </div>
 </div>
 
@@ -82,26 +103,18 @@
                     })
                 };
                 return [
-                    e("h4", {}, `Reagent ${i+1}`),
-                    e("div", {className: "d-flex flex-row justify-content-between"},
-                        e("div", {className: "form-group p-2"},
-                            e("label", {}, `Formula`),
-                            e("input", {type: "text", className: this.inputClass, value: this.state.reagents[i].formula, onChange: updateFormula}),
-                        ),
-                        e("div", {className: "form-group p-2"},
-                            e("label", {}, `Amount (g)`),
-                            e("input", {type: "number", className: this.inputClass, value: this.state.reagents[i].mass, onChange: updateMass}),
-                        ),
-                        e("div", {className: "form-group p-2"},
-                            e("label", {}, `Stoich. Coefficient`),
-                            e("input", {type: "number", className: this.inputClass, value: this.state.reagents[i].coeff, onChange: updateCoeff})
-                        )
+                    e("div", {className: "d-flex form-group"},
+                        e("input", {type: "number", style: {maxWidth: "4rem"}, className: this.inputClass, value: this.state.reagents[i].coeff, onChange: updateCoeff, placeholder: "1"}),
+                        e("p", {className: "mr-2 ml-2",}, "∗"),
+                        e("input", { required: true, type: "text", style: {maxWidth: "12rem"}, className: this.inputClass, value: this.state.reagents[i].formula, onChange: updateFormula, placeholder: "formula" }),
+                        e("p", {className: "mr-2 ml-2"}, "×"),
+                        e("input", {type: "number", style: {maxWidth: "8rem"}, className: this.inputClass, value: this.state.reagents[i].mass, onChange: updateMass, placeholder: "amount (g)"}),
                     )
                 ]
             });
             return e(
                 "div",
-                {},
+                {className: "mb-4"},
                 ...inputs
             )
         };
@@ -140,20 +153,12 @@
             return e(
                 "div",
                 {className: "mb-4"},
-                e("h4", {}, "Product"),
-                e("div", {className: "d-flex flex-row justify-content-between"},
-                    e("div", {className: "form-group p-2"},
-                        e("label", {}, `Formula`),
-                        e("input", {type: "text", className: this.inputClass, value: this.state.product.formula, onChange: updateFormula}),
-                    ),
-                    e("div", {className: "form-group p-2"},
-                        e("label", {}, `Amount (g)`),
-                        e("input", {type: "number", className: this.inputClass, value: this.state.product.mass, onChange: updateMass}),
-                    ),
-                    e("div", {className: "form-group p-2"},
-                        e("label", {}, `Stoich. Coefficient`),
-                        e("input", {type: "number", className: this.inputClass, value: this.state.product.coeff, onChange: updateCoeff})
-                    )
+                e("div", {className: "d-flex flex-row form-group"},
+                    e("input", {type: "number", style: {maxWidth: "4rem"}, className: this.inputClass,value: this.state.product.coeff, onChange: updateCoeff, placeholder: "1"}),
+                    e("p", {className: "mr-2 ml-2"}, "∗"),
+                    e("input", {type: "text", style: {maxWidth: "12rem"}, className: this.inputClass, value: this.state.product.formula, onChange: updateFormula, placeholder: "formula" }),
+                    e("p", {className: "mr-2 ml-2"}, "×"),
+                    e("input", {type: "number", style: {maxWidth: "8rem"}, className: this.inputClass, value: this.state.product.mass, onChange: updateMass, placeholder: "amount (g)"}),
                 )
             )
         };
@@ -168,30 +173,41 @@
             })
         };
 
-        onSubmit = (ev) => {
+        removeReagent = (ev) => {
             ev.preventDefault();
-            const URL = "http://localhost:3030/yield";
-            alert(`${JSON.stringify(this.state)}`);
-            fetch(
-                URL,
-                {
-                    mode: 'cors',
-                    method: "POST",
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Origin': 'localhost'
-                    },
-                    body: JSON.stringify(this.state)
-                }
-            )
-                .then(res => res.text())
-                .then(
-                    (result) => {
-                        this.setState({
-                            yield: result
-                        });
-                    },
+            if (this.state.reagents.length > 1){
+                this.setState({
+                    reagents: this.state.reagents.slice(0, -1)
+                })
+            }
+        };
+
+        onSubmit = (ev) => {
+            
+            if(!ev.defaultPrevented){
+                ev.preventDefault();
+                const URL = "http://localhost:3030/yield";
+                fetch(
+                    URL,
+                    {
+                        mode: 'cors',
+                        method: "POST",
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Origin': 'localhost'
+                        },
+                        body: JSON.stringify(this.state)
+                    }
                 )
+                    .then(res => res.text())
+                    .then(
+                        (result) => {
+                            this.setState({
+                                yield: result
+                            });
+                        },
+                    )
+            }
         };
 
         render() {
@@ -204,23 +220,27 @@
 
             return e(
                 'form',
-                {},
-                e("div", {className: ""},
+                {id: "reaction-form"},
+                e("div", {className: "d-flex flex-row"},
                     e("div", {},
                         this.rglist(),
-                        e("button", {className: "btn btn-secondary mb-4", onClick: this.addReagent}, "Add a Reagent")
+                        e("div", {className: "d-flex flex-row justify-content-between"},
+                            e("button", {className: "btn btn-secondary", onClick: this.addReagent}, "Add a Reagent"),
+                            e("button", {className: "btn btn-danger", onClick: this.removeReagent}, "Remove a Reagent")
+                        )
                     ),
+                    e("p", {className: "mr-2 ml-2"}, "="),
                     e("div", {},
                         this.p(),
-                        e("button", {className: "btn btn-primary submit", onClick: this.onSubmit}, "Submit"),
-                        ...yieldDisplay
+                        e("button", {className: "btn btn-primary", onClick: this.onSubmit}, "Submit"),
                     )
-                )
+                ),
+                ...yieldDisplay
             );
         }
     }
 
-    const domContainer = document.querySelector('#reaction-form');
+    const domContainer = document.querySelector('#reaction-form-container');
     ReactDOM.render(e(ReactionForm), domContainer);
 </script>
 </body>
