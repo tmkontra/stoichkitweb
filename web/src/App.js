@@ -245,7 +245,7 @@ class ReactionForm extends React.Component {
 
         return (
             <Form id={"reaction-form"} className={`form`} onSubmit={this.onSubmit}>
-                <div className={`d-flex flex-row`}>
+                <div className={`d-flex flex-row justify-content-between`}>
                     <div>
                         {this.rglist()}
                         <div className={`d-flex flex-row justify-content-between`}>
@@ -253,7 +253,9 @@ class ReactionForm extends React.Component {
                             <Button onClick={this.removeReagent} className={"btn-secondary"}>Remove A Reactant</Button>
                         </div>
                     </div>
-                    <p className={`mr-2 ml-2`}>=</p>
+                    <div>
+                        <p className={`mr-2 ml-2`}>=</p>
+                    </div>
                     <div>
                         {this.p()}
                         <Button type={`submit`} className={`btn-success float-right`}>Submit</Button>
