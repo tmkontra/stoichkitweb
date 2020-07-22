@@ -12,7 +12,9 @@ path = "src/main.rs"
 
 [dependencies]
 warp = "0.2"
-stoichkit = "0.1.0"
+stoichkit = "0.2.0"
 tokio = { version = "0.2.21", features = ["macros"] }
 serde = { version = "1.0", features = ["derive"] }
 env_logger = "0.7.1"
+itertools = "0.9.0"
+
