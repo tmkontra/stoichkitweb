@@ -1,3 +1,4 @@
+# build server
 FROM rust:1.40 as builder
 WORKDIR /usr/src/stoichkitweb
 COPY Cargo.toml Cargo.lock ./
@@ -12,6 +13,5 @@ RUN cargo install --path .
 FROM debian:buster-slim
 WORKDIR /opt/app
 COPY --from=builder /usr/local/cargo/bin/stoichkitweb app
-COPY web/ web/
 ENV RUST_LOG=INFO
 CMD ["./app"]

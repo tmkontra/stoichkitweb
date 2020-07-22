@@ -137,16 +137,14 @@ async fn main() {
             }
         });
 
-    let serve_static = warp::fs::dir("./web");
-
-    let serve_index =
-        warp::path::end().and(warp::fs::file("./web/index.html"));
-
     let log = warp::log("stoichkitweb");
 
-    warp::serve(pctyield.or(balance).or(serve_index).or(serve_static)
-        .with(cors)
-        .with(log))
+    warp::serve(
+        pctyield
+            .or(balance)
+            .with(cors)
+            .with(log)
+    )
         .run(([0, 0, 0, 0], 3030))
         .await;
 }

@@ -16,6 +16,15 @@ import Card from 'react-bootstrap/Card';
 
 const e = React.createElement;
 
+let API_URL;
+if(process.env.NODE_ENV === 'development') {
+    API_URL = 'http://localhost:3030';
+}
+
+if(process.env.NODE_ENV === 'production') {
+    API_URL = process.env.API_URL || "https://stoichkitweb.com/api";
+}
+
 function resultDiv(title, content) {
     let className = `mt-4 shadow-lg p-3 bg-white rounded`;
     let style = {flexGrow: 1, position: "relative", zIndex: 10};
@@ -183,7 +192,7 @@ class ReactionForm extends React.Component {
     onSubmit = (ev) => {
         const form = ev.currentTarget;
         if (form.checkValidity() === true) {
-            const URL = "http://localhost:3030/yield";
+            const URL = `${API_URL}/yield`;
             fetch(
                 URL,
                 {
@@ -295,7 +304,7 @@ class BalanceForm extends React.Component {
 
     onSubmit = (ev) => {
         const form = ev.currentTarget;
-        const URL = "http://localhost:3030/balance";
+        const URL = `${API_URL}/balance`;
         if(form.checkValidity()) {
             fetch(
                 URL,

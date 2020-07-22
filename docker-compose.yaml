@@ -1,8 +1,14 @@
 version: '3'
 services:
-  web:
+  api:
     image: "stoichkitweb"
     build:
       context: .
     ports:
       - "3030:3030"
+  web:
+    image: "stoichkitweb-ui"
+    build:
+      context: ./web
+    ports:
+      - "8080:80"
