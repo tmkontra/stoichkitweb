@@ -1,5 +1,4 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 
 import {
@@ -245,18 +244,20 @@ class ReactionForm extends React.Component {
 
         return (
             <Form id={"reaction-form"} className={`form`} onSubmit={this.onSubmit}>
-                <div className={`d-flex flex-row justify-content-between`}>
-                    <div>
+                <div className={`d-flex flex-row justify-content-between flex-wrap`}>
+                    <div className={`mb-3 yield-group`}>
+                        <h4>Reactants</h4>
                         {this.rglist()}
-                        <div className={`d-flex flex-row justify-content-between`}>
+                        <div className={`d-flex flex-row justify-content-between button-row`}>
                             <Button onClick={this.addReagent}>Add A Reactant</Button>
                             <Button onClick={this.removeReagent} className={"btn-secondary"}>Remove A Reactant</Button>
                         </div>
                     </div>
-                    <div>
-                        <p className={`mr-2 ml-2`}>=</p>
+                    <div className={`yield-divider`}>
+                        <p className={`align-middle mr-2 ml-2`} style={{display: "inline"}}>=</p>
                     </div>
-                    <div>
+                    <div className={`yield-group`}>
+                        <h4>Products</h4>
                         {this.p()}
                         <Button type={`submit`} className={`btn-success float-right`}>Submit</Button>
                     </div>
@@ -284,9 +285,10 @@ class BalanceForm extends React.Component {
     };
 
     removeReagent = (ev) => {
+        let sliced = this.state.reagents.slice(0,-1);
         this.setState({
             ...this.state,
-            reagents: this.state.reagents.slice(0,-1)
+            reagents: sliced.length ? sliced : ['']
         });
     };
 
@@ -298,9 +300,10 @@ class BalanceForm extends React.Component {
     };
 
     removeProduct = (ev) => {
+        let sliced = this.state.products.slice(0,-1);
         this.setState({
             ...this.state,
-            products: this.state.products.slice(0,-1)
+            products: sliced.length ? sliced : ['']
         })
     };
 
@@ -396,7 +399,7 @@ class BalanceForm extends React.Component {
                                     })
                                 }
                             </Form.Group>
-                            <div className={`d-flex flex-row justify-content-between`}>
+                            <div className={`d-flex flex-row justify-content-between button-row`}>
                                 <Button onClick={this.addReagent}>
                                     Add A Reactant
                                 </Button>
@@ -427,8 +430,8 @@ class BalanceForm extends React.Component {
                                     })
                                 }
                             </Form.Group>
-                            <div className={`d-flex flex-row justify-content-between`}>
-                                <Button onClick={this.addProduct}>
+                            <div className={`d-flex flex-row justify-content-between button-row`}>
+                                <Button onClick={this.addProduct} className={`py-auto`}>
                                     Add A Product
                                 </Button>
                                 <Button className={`btn btn-secondary`} onClick={this.removeProduct}>
