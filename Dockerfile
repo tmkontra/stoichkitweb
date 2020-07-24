@@ -1,22 +1,20 @@
 # build server
-FROM rust:1.40 as builder
+FROM rust:1.45-buster as builder
+
+RUN apt-get install -y libgmp10 libgmp-devel libmpfr-dev m4
+
 WORKDIR /usr/src/stoichkitweb
-RUN apt-get update
-RUN apt-get install -y gfortran libopenblas-dev
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src/
 RUN echo "fn main() {println!(\"if you see this, the build broke\")}" > src/main.rs
 RUN cargo build --release
 RUN rm -f target/release/deps/stoichkitweb*
 
-RUN apt-get install -y python3 python3-dev
-
 COPY src ./src
 RUN cargo build --release
 RUN cargo install --path .
 
 FROM debian:buster-slim
-WORKDIR /opt/app
-COPY --from=builder /usr/local/cargo/bin/stoichkitweb app
+COPY --from=builder /usr/local/cargo/bin/stoichkitweb /bin
 ENV RUST_LOG=INFO
-CMD ["./app"]
+CMD ["stoichkitweb"]

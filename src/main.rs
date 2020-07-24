@@ -1,14 +1,14 @@
 #[macro_use]
 extern crate log;
 
-use warp::{Filter, http::Response};
 use warp::http::StatusCode;
+use warp::{http::Response, Filter};
 
 use serde::{Deserialize, Serialize};
 use stoichkit::model::{Reaction, Substance};
-use itertools::Itertools;
 
 use env_logger;
+use std::panic;
 
 #[derive(Deserialize, Serialize)]
 struct SubstanceRequest {
@@ -40,38 +40,39 @@ impl ReactionRequest {
 #[derive(Deserialize, Serialize, Debug)]
 struct BalanceRequest {
     reagents: Vec<String>,
-    products: Vec<String>
+    products: Vec<String>,
 }
 
 #[derive(Serialize, Debug)]
 struct BalanceResponse {
-    reagents: Vec<(String, i32)>,
-    products: Vec<(String, i32)>
+    reagents: Vec<(String, u64)>,
+    products: Vec<(String, u64)>,
 }
 
 impl BalanceResponse {
-    pub fn new(reagents: Vec<(String, i32)>, products: Vec<(String, i32)>) -> BalanceResponse {
+    pub fn new(reagents: Vec<(String, u64)>, products: Vec<(String, u64)>) -> BalanceResponse {
         BalanceResponse { reagents, products }
     }
 }
 
 #[derive(Serialize, Debug)]
 struct ErrorResponse {
-    message: String
+    message: String,
 }
 
 impl warp::reject::Reject for ErrorResponse {}
 
-
 impl BalanceRequest {
     pub fn balance(self: &Self) -> Result<BalanceResponse, String> {
         debug!("Balancing {:?} = {:?}", self.reagents, self.products);
-        let reagents: Vec<Substance> = self.reagents
+        let reagents: Vec<Substance> = self
+            .reagents
             .iter()
             .filter(|f| !f.is_empty())
             .map(|f| Substance::from_formula(f.as_str()))
             .collect::<Result<Vec<Substance>, String>>()?;
-        let products: Vec<Substance> = self.products
+        let products: Vec<Substance> = self
+            .products
             .iter()
             .filter(|f| !f.is_empty())
             .map(|f| Substance::from_formula(f.as_str()))
@@ -80,22 +81,29 @@ impl BalanceRequest {
             (x, y) if x >= 1 as usize && y >= 1 as usize => Ok(()),
             _ => Err("Must provide at least 1 reactant and 1 product"),
         }?;
-        println!("Balancing parsed r: {:?}, p: {:?}", &reagents, &products);
-        let balanced: Vec<(String, i32)> = stoichkit::solve::balance(reagents, products)
-            .map_err(|_| format!("Could not balance equation"))?;
-        let rx_len = self.reagents.clone().len() + 1;
-        let balr: Vec<(String, i32)> = balanced
-            .iter()
-            .cloned()
-            .take(rx_len - 1 as usize)
-            .collect();
-        let balp: Vec<(String, i32)> = balanced
-            .iter()
-            .cloned()
-            .dropping(rx_len - 1)
-            .collect();
-        debug!("Balancing result: {:?} = {:?}", balr, balp);
-        Ok(BalanceResponse::new(balr, balp))
+        debug!(
+            "Balancing parsed reaction REAGENTS= {:?}, PRODUCTS= {:?}",
+            &reagents, &products
+        );
+        let e: Result<Result<(Vec<(String, u64)>, Vec<(String, u64)>), String>, _> =
+            panic::catch_unwind(|| stoichkit::solve::balance(reagents, products));
+        match e {
+            Ok(Ok((balanced_react, balanced_prod))) => {
+                debug!(
+                    "Balancing result: {:?} = {:?}",
+                    balanced_react, balanced_prod
+                );
+                Ok(BalanceResponse::new(balanced_react, balanced_prod))
+            }
+            other => {
+                warn!(
+                    "Could not balance equation: {:?} = {:?}",
+                    self.reagents, self.products
+                );
+                debug!("Balance attempt failed with: {:?}", other);
+                Err("Could not balance reaction!".to_string())
+            }
+        }
     }
 }
 
@@ -113,11 +121,13 @@ async fn main() {
     let pctyield = warp::path!("yield")
         .and(warp::body::json())
         .map(|r: ReactionRequest| {
-            match r.reaction()
+            match r
+                .reaction()
                 .map(|r| r.percent_yield())
-                .map(|y| format!("{}", y)) {
+                .map(|y| format!("{}", y))
+            {
                 Ok(yld) => Response::builder().body(yld),
-                Err(msg) => Response::builder().status(400).body(msg)
+                Err(msg) => Response::builder().status(400).body(msg),
             }
         });
 
@@ -129,9 +139,9 @@ async fn main() {
                 Ok(balance) => {
                     let json = warp::reply::json(&balance);
                     warp::reply::with_status(json, StatusCode::OK)
-                },
+                }
                 Err(message) => {
-                    let json = warp::reply::json(&ErrorResponse{message});
+                    let json = warp::reply::json(&ErrorResponse { message });
                     warp::reply::with_status(json, StatusCode::BAD_REQUEST)
                 }
             }
@@ -139,12 +149,7 @@ async fn main() {
 
     let log = warp::log("stoichkitweb");
 
-    warp::serve(
-        pctyield
-            .or(balance)
-            .with(cors)
-            .with(log)
-    )
+    warp::serve(pctyield.or(balance).with(cors).with(log))
         .run(([0, 0, 0, 0], 3030))
         .await;
 }
