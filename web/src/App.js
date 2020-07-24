@@ -340,6 +340,12 @@ class BalanceForm extends React.Component {
                         }
                     },
                 )
+                .catch((_e) =>
+                    this.setState({
+                        balanced: null,
+                        errorMessage: "Could not complete request. Please try again later."
+                    })
+                )
             ev.preventDefault();
         }
     };
