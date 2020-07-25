@@ -1,7 +1,7 @@
 # build server
 FROM rust:1.45-buster as builder
-
-RUN apt-get install -y libgmp10 libgmp-devel libmpfr-dev m4
+RUN apt-get update
+RUN apt-get install -y libgmp10 libgmp-dev libmpfr-dev m4 gfortran
 
 WORKDIR /usr/src/stoichkitweb
 COPY Cargo.toml Cargo.lock ./
@@ -15,6 +15,8 @@ RUN cargo build --release
 RUN cargo install --path .
 
 FROM debian:buster-slim
+RUN apt-get update
+RUN apt-get install -y libgmp10 libgmp-dev libmpfr-dev m4 gfortran
 COPY --from=builder /usr/local/cargo/bin/stoichkitweb /bin
 ENV RUST_LOG=INFO
 CMD ["stoichkitweb"]
