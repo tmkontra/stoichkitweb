@@ -95,13 +95,21 @@ impl BalanceRequest {
                 );
                 Ok(BalanceResponse::new(balanced_react, balanced_prod))
             }
+            Ok(Err(error_message)) => {
+                warn!(
+                    "Could not balance equation: {:?} = {:?}",
+                    self.reagents, self.products
+                );
+                debug!("Balance attempt failed with: {:?}", error_message);
+                Err(error_message)
+            },
             other => {
                 warn!(
                     "Could not balance equation: {:?} = {:?}",
                     self.reagents, self.products
                 );
                 debug!("Balance attempt failed with: {:?}", other);
-                Err("Could not balance reaction!".to_string())
+                Err("Could not balance equation!".to_string())
             }
         }
     }
