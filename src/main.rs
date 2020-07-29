@@ -5,10 +5,13 @@ use warp::http::StatusCode;
 use warp::{http::Response, Filter};
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use stoichkit::model::{Reaction, Substance};
+use stoichkit::ext::parse_chemdraw_reaction;
 
 use env_logger;
 use std::panic;
+use warp::reply::Json;
 
 #[derive(Deserialize, Serialize)]
 struct SubstanceRequest {
@@ -58,6 +61,12 @@ impl BalanceResponse {
 #[derive(Serialize, Debug)]
 struct ErrorResponse {
     message: String,
+}
+
+impl ErrorResponse {
+    pub fn json(&self) -> Json {
+        warp::reply::json(&self)
+    }
 }
 
 impl warp::reject::Reject for ErrorResponse {}
@@ -115,6 +124,12 @@ impl BalanceRequest {
     }
 }
 
+#[derive(Serialize, Debug)]
+struct ChemdrawReactionResponse {
+    reactants: Vec<String>,
+    products: Vec<String>
+}
+
 #[tokio::main]
 async fn main() {
     env_logger::init();
@@ -125,7 +140,6 @@ async fn main() {
         .allow_headers(vec!["content-type"])
         .build();
 
-    // GET /hello/warp => 200 OK with body "Hello, warp!"
     let pctyield = warp::path!("yield")
         .and(warp::body::json())
         .map(|r: ReactionRequest| {
@@ -139,6 +153,24 @@ async fn main() {
             }
         });
 
+    let parse_chemdraw_reaction = warp::path!("chemdraw")
+        .and(warp::body::json())
+        .map(|json: Value| {
+            match parse_chemdraw_reaction(json.to_string().as_str()) {
+                Ok(r) => {
+                    let reactants = r.reactants.iter().map(|r| r.formula.to_owned()).collect();
+                    let products = r.products.iter().map(|p| p.formula.to_owned()).collect();
+                    let resp = ChemdrawReactionResponse{reactants, products};
+                    let body = warp::reply::json(&resp);
+                    warp::reply::with_status(body, StatusCode::OK)
+                },
+                    Err(message) => {
+                    let json = ErrorResponse { message }.json();
+                    warp::reply::with_status(json, StatusCode::OK)
+                },
+            }
+        });
+
     let balance = warp::path!("balance")
         .and(warp::body::json())
         .map(|r: BalanceRequest| {
@@ -149,7 +181,7 @@ async fn main() {
                     warp::reply::with_status(json, StatusCode::OK)
                 }
                 Err(message) => {
-                    let json = warp::reply::json(&ErrorResponse { message });
+                    let json = ErrorResponse { message }.json();
                     warp::reply::with_status(json, StatusCode::BAD_REQUEST)
                 }
             }
@@ -157,7 +189,10 @@ async fn main() {
 
     let log = warp::log("stoichkitweb");
 
-    warp::serve(pctyield.or(balance).with(cors).with(log))
+    warp::serve(pctyield
+        .or(balance)
+        .or(parse_chemdraw_reaction)
+        .with(cors).with(log))
         .run(([0, 0, 0, 0], 3030))
         .await;
 }
