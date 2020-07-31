@@ -18,6 +18,10 @@
     max-width: 45%;
 }
 
+.btn.nohover:hover {
+    color: white;
+}
+
 @media only screen and (max-width: 768px) {
 
     .yield-group {

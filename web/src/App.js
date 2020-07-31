@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import './App.css';
 
 import {
@@ -12,6 +12,8 @@ import {
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
+import Modal from 'react-bootstrap/Modal';
+import Collapse from 'react-bootstrap/Collapse';
 
 const e = React.createElement;
 
@@ -48,7 +50,7 @@ class ReactionForm extends React.Component {
             reagents: [this.newReagent()],
             product: this.newReagent(),
             yield: null,
-            errorMessage: null
+            errorMessage: null,
         };
     }
 
@@ -268,12 +270,53 @@ class ReactionForm extends React.Component {
     }
 }
 
+const IMPORT_REACTION_COLLAPSIBLE_ID = "importReactionCollapse";
+
+function ChemdrawReactionModal(props) {
+    const [show, setShow] = useState(false);
+    const [reaction, setReaction] = useState(null);
+
+    const handleClose = () => {
+        props.submitChemdrawReaction(reaction);
+        setShow(false);
+        props.cleanup();
+    };
+
+    const handleShow = () => setShow(true);
+
+    return (
+        <>
+        <Button variant="primary" onClick={handleShow}>
+            {props.name}
+        </Button>
+        <Modal show={show} onHide={handleClose} animation={false}>
+            <Modal.Header closeButton>
+                <Modal.Title>Import Chemdraw Reaction</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <Form.Control type={`text`}
+                              placeholder={`Paste Chemdraw Reaction Here`}
+                              value={reaction}
+                              onChange={(ev) => setReaction(ev.target.value)}
+                />
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="success" onClick={handleClose}>
+                    Submit
+                </Button>
+            </Modal.Footer>
+        </Modal>
+        </>
+    )
+};
+
 class BalanceForm extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             reagents: [''],
-            products: ['']
+            products: [''],
+            importExpanded: false,
         };
     }
 
@@ -378,9 +421,91 @@ class BalanceForm extends React.Component {
         }
     };
 
+    submitChemdrawReaction = (reactionString) => {
+        const URL = `${API_URL}/chemdraw`;
+        if (reactionString) {
+            fetch(
+                URL,
+                {
+                    mode: 'cors',
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: reactionString
+                }
+            )
+                .then(res =>
+                    res.json().then(text => [res.ok, text])
+                )
+                .then(
+                    ([ok, content]) => {
+                        if (ok) {
+                            let update = {
+                                reagents: content.reactants,
+                                products: content.products,
+                            };
+                            console.log(update);
+                            this.setState({
+                                ...this.state,
+                                ...update,
+                                errorMessage: null,
+                            });
+                            console.log(this.state);
+                        } else {
+                            this.setState({
+                                ...this.state,
+                                balanced: null,
+                                errorMessage: content.message
+                            })
+                        }
+                    }
+                )
+                .catch((_e) =>
+                    this.setState({
+                        ...this.state,
+                        balanced: null,
+                        errorMessage: "Could not complete request. Please try again later."
+                    })
+                )
+        }
+    };
+
+    setImportExpanded = (importExpanded) => {
+        this.setState({
+            ...this.state,
+            importExpanded: importExpanded
+        })
+    };
+
     render() {
         return (
                 <div>
+                    <p>
+                        <a className="btn btn-outline-primary nohover" type="button"
+                           aria-expanded={this.state.importExpanded}
+                           aria-controls={IMPORT_REACTION_COLLAPSIBLE_ID}
+                           onClick={() => this.setImportExpanded(!this.state.importExpanded)}
+                        >
+                            <svg width="1em" height="1em" viewBox="0 0 16 16" className="bi bi-arrow-down-short"
+                                 fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd"
+                                      d="M4.646 7.646a.5.5 0 0 1 .708 0L8 10.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z"/>
+                                <path fill-rule="evenodd"
+                                      d="M8 4.5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                            Import A Reaction
+                        </a>
+                    </p>
+                    <Collapse in={this.state.importExpanded}>
+                        <div id={IMPORT_REACTION_COLLAPSIBLE_ID} style={{margin: 0, padding: 0}}>
+                            <ChemdrawReactionModal name={"Chemdraw Reaction"}
+                                                   submitChemdrawReaction={this.submitChemdrawReaction}
+                                                   cleanup={() => this.setImportExpanded(false)}
+                            />
+                            <hr/>
+                        </div>
+                    </Collapse>
                 <Form id={"reaction-form"} className={`form`} onSubmit={this.onSubmit}>
                     <div className={`d-flex flex-row`}>
                         <div style={{flexGrow: 1}} className={`mr-2`}>
@@ -397,7 +522,7 @@ class BalanceForm extends React.Component {
                                             })
 
                                         };
-                                        return <Form.Control value={this.state.reagents[r]}
+                                        return <Form.Control value={this.state.reagents[i]}
                                                              onChange={update}
                                                              type={"text"}
                                                              className={`mb-2`}
@@ -452,7 +577,7 @@ class BalanceForm extends React.Component {
                         </Button>
                     </div>
                 </Form>
-                <div className={`d-flex flex-row`}>
+                    <div className={`d-flex flex-row`}>
                     {this.ev()}
                 </div>
             </div>
