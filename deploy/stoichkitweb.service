@@ -1,0 +1,13 @@
+[Unit]
+Description=Stoichkitweb API
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=stoichkitweb
+ExecStart=/opt/stoichkitweb/stoichkitweb
+
+[Install]
+WantedBy=multi-user.target
